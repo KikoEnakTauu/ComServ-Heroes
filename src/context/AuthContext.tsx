@@ -1,34 +1,34 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { UserRole } from '../utils/roles';
+// src/context/AuthContext.tsx
+import { createContext, useContext, useState, ReactNode } from "react";
+import { User, UserRole } from "../types/auth";
 
 interface AuthContextType {
-  role: UserRole | null;
-  isAuthenticated: boolean;
-  login: (role: UserRole) => void;
+  user: User | null;
+  login: (role: UserRole) => Promise<void>; // Mocking login for structure
   logout: () => void;
+  hasRole: (allowedRoles: UserRole[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [role, setRole] = useState<UserRole | null>(null);
-
-  const login = (selectedRole: UserRole) => {
-    setRole(selectedRole);
+  // Helper to strictly check permissions
+  const hasRole = (allowedRoles: UserRole[]): boolean => {
+    if (!user) return false;
+    return allowedRoles.includes(user.role);
   };
 
-  const logout = () => {
-    setRole(null);
+  const login = async (role: UserRole) => {
+    // API simulation
+    setUser({ id: "123", name: "John Doe", email: "john@csh.com", role });
   };
 
-  const isAuthenticated = role !== null;
+  const logout = () => setUser(null);
 
   return (
-    <AuthContext.Provider value={{ role, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, hasRole }}>
       {children}
     </AuthContext.Provider>
   );
@@ -36,8 +36,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
 };

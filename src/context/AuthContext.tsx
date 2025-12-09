@@ -172,7 +172,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setEmail(null);
   };
 
-  const isAuthenticated = role !== null;
+  const logout = () => setUser(null);
 
   return (
     <AuthContext.Provider value={{ userId, role, email, isAuthenticated, loading, login, signUp, logout }}>
@@ -183,8 +183,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
 };

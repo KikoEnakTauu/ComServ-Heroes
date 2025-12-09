@@ -1,122 +1,218 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { RootStackParamList } from '../navigation/AppNavigator';
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+import { useEvents } from '../context/EventContext';
 
 export default function HomeScreen() {
-  const { role, logout } = useAuth();
-  const navigation = useNavigation<NavigationProp>();
+  const { userId, role } = useAuth();
+  const { events, getUserEvents, loading } = useEvents();
+
+  const myEvents = userId ? getUserEvents(userId) : [];
+  const upcomingEvents = events.slice(0, 3);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Loading dashboard...</Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Community App</Text>
-      
-      <View style={styles.roleContainer}>
-        <Text style={styles.roleLabel}>Current Role:</Text>
-        <Text style={styles.roleValue}>{role}</Text>
-      </View>
+    <ScrollView style={styles.container}>
+      <View style={styles.content}>
+        {/* Welcome Section */}
+        <View style={styles.welcomeCard}>
+          <Text style={styles.greeting}>Welcome Back! 👋</Text>
+          <View style={styles.roleContainer}>
+            <Text style={styles.roleLabel}>You are logged in as:</Text>
+            <Text style={styles.roleValue}>{role?.toUpperCase()}</Text>
+          </View>
+        </View>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={styles.navButton}
-          onPress={() => navigation.navigate('EventList')}
-        >
-          <Text style={styles.navButtonText}>📋 All Events</Text>
-        </TouchableOpacity>
+        {/* Quick Stats */}
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{events.length}</Text>
+            <Text style={styles.statLabel}>Total Events</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{myEvents.length}</Text>
+            <Text style={styles.statLabel}>
+              {role === 'sso' ? 'Created' : 'Joined'}
+            </Text>
+          </View>
+        </View>
 
-        <TouchableOpacity 
-          style={styles.navButton}
-          onPress={() => navigation.navigate('MyEvents')}
-        >
-          <Text style={styles.navButtonText}>
-            {role === 'user' ? '✓ My Joined Events' : '📝 My Created Events'}
+        {/* Quick Info */}
+        <View style={styles.infoCard}>
+          <Text style={styles.infoTitle}>Quick Navigation</Text>
+          <Text style={styles.infoText}>
+            • Use the <Text style={styles.boldText}>Events</Text> tab to view all events
           </Text>
-        </TouchableOpacity>
-      </View>
+          <Text style={styles.infoText}>
+            • Check <Text style={styles.boldText}>My Events</Text> for your {role === 'sso' ? 'created' : 'joined'} events
+          </Text>
+          <Text style={styles.infoText}>
+            • Visit <Text style={styles.boldText}>Profile</Text> to view stats and logout
+          </Text>
+        </View>
 
-      <TouchableOpacity 
-        style={styles.logoutButton}
-        onPress={logout}
-      >
-        <Text style={styles.logoutButtonText}>Logout</Text>
-      </TouchableOpacity>
-    </View>
+        {/* Upcoming Events Preview */}
+        {upcomingEvents.length > 0 && (
+          <View style={styles.upcomingCard}>
+            <Text style={styles.upcomingTitle}>Recent Events</Text>
+            {upcomingEvents.map((event, index) => (
+              <View key={event.id} style={styles.eventItem}>
+                <Text style={styles.eventTitle}>{event.title}</Text>
+                <Text style={styles.eventDetail}>📅 {event.date}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 40,
-    color: '#333',
-  },
-  roleContainer: {
-    backgroundColor: '#f5f5f5',
-    padding: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 30,
-    minWidth: 250,
-  },
-  roleLabel: {
+  loadingText: {
+    marginTop: 12,
     fontSize: 16,
     color: '#666',
-    marginBottom: 8,
+  },
+  content: {
+    padding: 16,
+  },
+  welcomeCard: {
+    backgroundColor: '#007AFF',
+    borderRadius: 12,
+    padding: 24,
+    marginBottom: 16,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  greeting: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 16,
+  },
+  roleContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 12,
+    borderRadius: 8,
+  },
+  roleLabel: {
+    fontSize: 14,
+    color: '#fff',
+    marginBottom: 4,
   },
   roleValue: {
-    fontSize: 24,
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginHorizontal: 4,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  statNumber: {
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#007AFF',
-    textTransform: 'uppercase',
+    marginBottom: 4,
   },
-  buttonContainer: {
-    width: '100%',
-    maxWidth: 300,
-    marginBottom: 30,
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
   },
-  navButton: {
-    backgroundColor: '#007AFF',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginVertical: 8,
+  infoCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
-  navButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  infoTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
   },
-  logoutButton: {
-    backgroundColor: '#FF3B30',
-    paddingHorizontal: 32,
+  infoText: {
+    fontSize: 14,
+    color: '#666',
+    marginVertical: 4,
+    lineHeight: 20,
+  },
+  boldText: {
+    fontWeight: 'bold',
+    color: '#007AFF',
+  },
+  upcomingCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  upcomingTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
+  eventItem: {
     paddingVertical: 12,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
-  logoutButtonText: {
-    color: '#fff',
+  eventTitle: {
     fontSize: 16,
     fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  eventDetail: {
+    fontSize: 14,
+    color: '#666',
   },
 });

@@ -22,30 +22,30 @@ export default function AddEventScreen() {
 
   const handleSubmit = async () => {
     if (!title.trim() || !date.trim() || !location.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Validation Error', 'Please fill in all fields');
       return;
     }
 
-    try {
-      await addEvent({
-        title: title.trim(),
-        date: date.trim(),
-        location: location.trim(),
-        createdBy: role || 'sso',
-      });
+    const result = await addEvent({
+      title: title.trim(),
+      date: date.trim(),
+      location: location.trim(),
+      createdBy: '', // Will be set automatically by Supabase
+    });
 
-      Alert.alert('Success', 'Event created successfully!', [
+    if (result.success) {
+      Alert.alert('Success', result.message, [
         {
           text: 'OK',
           onPress: () => navigation.goBack(),
         },
       ]);
-
+      
       setTitle('');
       setDate('');
       setLocation('');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to create event');
+    } else {
+      Alert.alert('Error', result.message);
     }
   };
 
